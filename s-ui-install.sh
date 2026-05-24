@@ -204,7 +204,7 @@ install_s-ui() {
 
     systemctl enable s-ui --now
 
-    echo -e "${green}s-ui v${last_version}${plain} installation finished, it is up and running now..."
+    echo -e "${green}s-ui ${last_version}${plain} installation finished, it is up and running now..."
     echo -e "You may access the Panel with following URL(s):${green}"
     /usr/local/s-ui/sui uri
     echo -e "${plain}"
@@ -214,4 +214,4 @@ install_s-ui() {
 
 echo -e "${green}Executing...${plain}"
 install_base
-install_s-ui $1
+install_s-ui "$1"

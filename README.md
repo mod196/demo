@@ -24,6 +24,8 @@ VERSION=1.4.2-mod196.1 && bash <(curl -Ls https://raw.githubusercontent.com/mod1
 bash <(curl -Ls https://raw.githubusercontent.com/mod196/demo/main/s-ui-install.sh)
 ```
 
+无参数安装会优先读取 `mod196/s-ui` 的 GitHub latest release；如果 GitHub API 限制或当前只有 prerelease，脚本会回退到当前推荐版本 `v1.4.2-mod196.1`。
+
 ### 分发源说明
 
 - 安装脚本：`https://raw.githubusercontent.com/mod196/demo/main/s-ui-install.sh`
