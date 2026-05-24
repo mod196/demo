@@ -6,6 +6,9 @@ yellow='\033[0;33m'
 plain='\033[0m'
 
 cur_dir=$(pwd)
+SUI_REPO="mod196/s-ui"
+DEFAULT_VERSION="v1.4.2-mod196.1"
+SCRIPT_REPO="mod196/demo"
 
 # check root
 [[ $EUID -ne 0 ]] && echo -e "${red}Fatal error: ${plain} Please run this script with root privilege \n " && exit 1
@@ -37,6 +40,33 @@ arch() {
 }
 
 echo "arch: $(arch)"
+
+normalize_version() {
+    local version="$1"
+    if [[ -z "${version}" ]]; then
+        echo ""
+        return
+    fi
+    if [[ "${version}" == v* ]]; then
+        echo "${version}"
+    else
+        echo "v${version}"
+    fi
+}
+
+download_release() {
+    local version="$1"
+    local package="s-ui-linux-$(arch).tar.gz"
+    local url="https://github.com/${SUI_REPO}/releases/download/${version}/${package}"
+
+    echo -e "Script repository: ${green}${SCRIPT_REPO}${plain}"
+    echo -e "Release repository: ${green}${SUI_REPO}${plain}"
+    echo -e "Target version: ${green}${version}${plain}"
+    echo -e "CPU architecture: ${green}$(arch)${plain}"
+    echo -e "Download URL: ${green}${url}${plain}"
+
+    wget -N --no-check-certificate -O "/tmp/${package}" "${url}"
+}
 
 install_base() {
     case "${release}" in
@@ -135,24 +165,23 @@ install_s-ui() {
     cd /tmp/
 
     if [ $# == 0 ]; then
-        last_version=$(curl -Ls "https://api.github.com/repos/bulianglin/demo/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+        last_version=$(curl -Ls "https://api.github.com/repos/${SUI_REPO}/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
         if [[ ! -n "$last_version" ]]; then
-            echo -e "${red}Failed to fetch s-ui version, it maybe due to Github API restrictions, please try it later${plain}"
-            exit 1
+            echo -e "${yellow}Failed to fetch latest s-ui version, fallback to ${DEFAULT_VERSION}${plain}"
+            last_version="${DEFAULT_VERSION}"
         fi
         echo -e "Got s-ui latest version: ${last_version}, beginning the installation..."
-        wget -N --no-check-certificate -O /tmp/s-ui-linux-$(arch).tar.gz https://github.com/bulianglin/demo/releases/download/${last_version}/s-ui-linux-$(arch).tar.gz
+        download_release "${last_version}"
         if [[ $? -ne 0 ]]; then
             echo -e "${red}Downloading s-ui failed, please be sure that your server can access Github ${plain}"
             exit 1
         fi
     else
-        last_version=$1
-        url="https://github.com/bulianglin/demo/releases/download/${last_version}/s-ui-linux-$(arch).tar.gz"
-        echo -e "Beginning the install s-ui v$1"
-        wget -N --no-check-certificate -O /tmp/s-ui-linux-$(arch).tar.gz ${url}
+        last_version=$(normalize_version "$1")
+        echo -e "Beginning the install s-ui ${last_version}"
+        download_release "${last_version}"
         if [[ $? -ne 0 ]]; then
-            echo -e "${red}download s-ui v$1 failed,please check the version exists${plain}"
+            echo -e "${red}download s-ui ${last_version} failed, please check the version exists${plain}"
             exit 1
         fi
     fi

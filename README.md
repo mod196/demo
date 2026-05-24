@@ -1,5 +1,79 @@
 # demo
 
+## S-UI 二次开发版安装
+
+本仓库提供 S-UI 二次开发版安装脚本；正式安装包由 `mod196/s-ui` 的 GitHub Releases 分发。
+
+### 推荐安装命令
+
+固定版本安装，适合生产环境可复现部署：
+
+```bash
+VERSION=v1.4.2-mod196.1 && bash <(curl -Ls https://raw.githubusercontent.com/mod196/demo/main/s-ui-install.sh) $VERSION
+```
+
+未带 `v` 的版本号也支持，脚本会自动补齐：
+
+```bash
+VERSION=1.4.2-mod196.1 && bash <(curl -Ls https://raw.githubusercontent.com/mod196/demo/main/s-ui-install.sh) $VERSION
+```
+
+安装最新 release：
+
+```bash
+bash <(curl -Ls https://raw.githubusercontent.com/mod196/demo/main/s-ui-install.sh)
+```
+
+### 分发源说明
+
+- 安装脚本：`https://raw.githubusercontent.com/mod196/demo/main/s-ui-install.sh`
+- Release 仓库：`https://github.com/mod196/s-ui`
+- 安装包格式：`https://github.com/mod196/s-ui/releases/download/<VERSION>/s-ui-linux-<arch>.tar.gz`
+- 当前推荐版本：`v1.4.2-mod196.1`
+
+### 升级与数据保留
+
+安装脚本会保留已有 `/usr/local/s-ui/db/s-ui.db`，不会用本地测试数据覆盖线上数据。新版首次启动后会由 S-UI/GORM 自动补齐 SQLite schema。
+
+升级前建议先备份：
+
+```bash
+TS=$(date -u +%Y%m%dT%H%M%SZ)
+BACKUP_DIR=/root/s-ui-backup-$TS
+mkdir -p "$BACKUP_DIR"
+cp -a /usr/local/s-ui/db/s-ui.db "$BACKUP_DIR/s-ui.db"
+cp -a /usr/local/s-ui/sui "$BACKUP_DIR/sui"
+cp -a /etc/systemd/system/s-ui.service "$BACKUP_DIR/s-ui.service"
+tar -C /root -czf "$BACKUP_DIR.tar.gz" "$(basename "$BACKUP_DIR")"
+```
+
+### VPS 总池账期
+
+新 VPS 首次启动新版 S-UI 时，会自动按首次启动 UTC 时间写入 VPS 总池账期起点。
+
+当前线上 VPS 如果需要固定为 `2026-05-23 00:00:00 UTC` 起算，需要在部署后单独写入：
+
+```bash
+python3 - <<'PY'
+import sqlite3
+path = "/usr/local/s-ui/db/s-ui.db"
+settings = {
+    "trafficPoolAnchorAt": "1779494400",
+    "trafficPoolCycleDays": "30",
+    "trafficPoolLimitBytes": "1073741824000",
+    "trafficPoolSource": "user",
+}
+conn = sqlite3.connect(path)
+cur = conn.cursor()
+for key, value in settings.items():
+    cur.execute("delete from settings where key = ?", (key,))
+    cur.execute("insert into settings(key, value) values (?, ?)", (key, value))
+conn.commit()
+conn.close()
+PY
+systemctl restart s-ui
+```
+
 ## RouteForwarder <https://youtu.be/dpmnkKhBFtc>
 ## box5magisk <https://youtu.be/oRyjX44Bxw4>
 ## 01 <https://youtu.be/VONkHvKkCX0>
